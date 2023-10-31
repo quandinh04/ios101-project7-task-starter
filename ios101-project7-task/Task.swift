@@ -5,7 +5,7 @@
 import UIKit
 
 // The Task model
-struct Task {
+struct Task: Codable, Equatable {
 
     // The task's title
     var title: String
@@ -44,10 +44,10 @@ struct Task {
 
     // The date the task was created
     // This property is set as the current date whenever the task is initially created.
-    let createdDate: Date = Date()
+    var createdDate: Date = Date()
 
     // An id (Universal Unique Identifier) used to identify a task.
-    let id: String = UUID().uuidString
+    var id: String = UUID().uuidString
 }
 
 // MARK: - Task + UserDefaults
@@ -56,21 +56,40 @@ extension Task {
 
     // Given an array of tasks, encodes them to data and saves to UserDefaults.
     static func save(_ tasks: [Task]) {
-
         // TODO: Save the array of tasks
+        let defaults = UserDefaults.standard
+        let encodedData = try! JSONEncoder().encode(tasks)
+        defaults.set(encodedData, forKey: "Tasks")
     }
 
     // Retrieve an array of saved tasks from UserDefaults.
     static func getTasks() -> [Task] {
         
         // TODO: Get the array of saved tasks from UserDefaults
+        let defaults = UserDefaults.standard
 
-        return [] // 👈 replace with returned saved tasks
+        if let data = defaults.data(forKey: "Tasks") {
+            let decodedTasks = try! JSONDecoder().decode([Task].self, from: data)
+            return decodedTasks
+            
+        } else {
+            return []
+        }
     }
 
     // Add a new task or update an existing task with the current task.
     func save() {
-
         // TODO: Save the current task
+        var favoriteTasks = Task.getTasks()
+        
+        if let matchingTaskIndex = favoriteTasks.firstIndex(where: {$0.id == self.id}) {
+            favoriteTasks.remove(at: matchingTaskIndex)
+            favoriteTasks.insert(self, at: matchingTaskIndex)
+            
+        } else {
+            favoriteTasks.append(self)
+        }
+        
+        Task.save(favoriteTasks)
     }
 }
